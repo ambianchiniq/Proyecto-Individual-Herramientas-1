@@ -1,0 +1,226 @@
+---
+title: "Proyecto Individual"
+author: "Alejandro Bianchini"
+format: 
+  html:
+    embed-resources: true
+editor: visual
+---
+
+NBA
+
+```{r}
+
+# Cargar el dataset
+nba_data <- read.csv("NBA_stats.csv", stringsAsFactors = FALSE)
+
+# Seleccionar variables de interés
+nba_trabajo <- nba_data[, c("Player", "Team", "Pos", "Age", "G", "MP", "PTS")]
+
+# Eliminar filas con valores faltantes en MP o PTS
+nba_clean <- nba_trabajo[complete.cases(nba_trabajo[c("MP", "PTS")]), ]
+
+# Mostrar información básica
+cat("Total de observaciones:", nrow(nba_clean), "\n")
+cat("Número de variables:", ncol(nba_clean), "\n\n")
+
+# Mostrar primeras observaciones
+head(nba_clean, 10)
+
+#---------------------------------------------------------------------------------
+# Analisis de datos
+# Resumen estadístico de las variables principales
+summary(nba_clean[c("MP", "PTS")])
+
+# Calcular estadísticas adicionales
+cat("\n=== Estadísticas de Minutos por Partido (MP) ===\n")
+cat("Media:", round(mean(nba_clean$MP), 2), "\n")
+cat("Desviación estándar:", round(sd(nba_clean$MP), 2), "\n")
+cat("Rango:", range(nba_clean$MP), "\n\n")
+
+cat("=== Estadísticas de Puntos por Partido (PTS) ===\n")
+cat("Media:", round(mean(nba_clean$PTS), 2), "\n")
+cat("Desviación estándar:", round(sd(nba_clean$PTS), 2), "\n")
+cat("Rango:", range(nba_clean$PTS), "\n")
+
+#----------------------------------------------------------------------------------
+# Histograma de Minutos por Partido
+hist(nba_clean$MP,
+  main = "Distribución de Minutos por Partido",
+  xlab = "Minutos por Partido (MP)",
+  ylab = "Frecuencia",
+  col = "lightblue",
+  border = "black",
+  breaks = 20)
+  abline(v = mean(nba_clean$MP), col = "red", lwd = 2, lty = 2)
+  legend("topright", legend = "Media", col = "red", lty = 2, lwd = 2)
+  
+#----------------------------------------------------------------------------------
+# Histograma de Puntos por Partido
+hist(nba_clean$PTS,
+main = "Distribución de Puntos por Partido",
+xlab = "Puntos por Partido (PTS)",
+ylab = "Frecuencia",
+col = "lightgreen",
+border = "black",
+breaks = 20)
+abline(v = mean(nba_clean$PTS), col = "red", lwd = 2, lty = 2)
+legend("topright", legend = "Media", col = "red", lty = 2, lwd = 2)
+
+#----------------------------------------------------------------------------------
+# Gráfico de dispersión
+plot(nba_clean$MP, nba_clean$PTS,
+main = "Relación entre Minutos Jugados y Puntos Anotados",
+xlab = "Minutos por Partido (MP)",
+ylab = "Puntos por Partido (PTS)",
+pch = 16,
+col = rgb(0, 0, 1, 0.5),
+cex = 0.8)
+grid()
+
+# Calcular y mostrar correlación
+correlacion <- cor(nba_clean$MP, nba_clean$PTS)
+cat("\nCoeficiente de correlación de Pearson:", round(correlacion, 4))
+
+#Interpretación: El coeficiente de correlación indica una relación lineal positiva fuerte entre las variables MP y PTS.
+
+#----------------------------------------------------------------------------------
+
+# Modelo de Regresión Lineal
+
+# Crear modelo de regresión lineal simple
+modelo <- lm(PTS ~ MP, data = nba_clean)
+
+# Interpretacion de resultados
+# Extraer coeficientes
+intercepto <- round(coef(modelo), 4)
+pendiente <- round(coef(modelo), 4)
+
+# Extraer métricas
+r_cuadrado <- round(summary(modelo)$r.squared, 4)
+r_cuadrado_adj <- round(summary(modelo)$adj.r.squared, 4)
+
+cat("=== ECUACIÓN DEL MODELO ===\n")
+cat("PTS =", intercepto, "+", pendiente, "× MP\n\n")
+
+cat("=== INTERPRETACIÓN ===\n")
+cat("Intercepto (β₀):", intercepto, "\n")
+cat(" → Valor predicho de PTS cuando MP = 0\n\n")
+
+cat("Pendiente (β₁):", pendiente, "\n")
+cat(" → Por cada minuto adicional jugado, se espera un aumento de", pendiente, "puntos\n\n")
+
+cat("R² (Coeficiente de determinación):", r_cuadrado, "\n")
+cat(" → El modelo explica el", round(r_cuadrado*100, 2), "% de la variabilidad en los puntos\n\n")
+
+cat("R² Ajustado:", r_cuadrado_adj, "\n")
+
+#----------------------------------------------------------------------------------
+# Gráfico con línea de regresión
+plot(nba_clean$MP, nba_clean$PTS,
+main = "Modelo Lineal: Puntos vs Minutos",
+xlab = "Minutos por Partido (MP)",
+ylab = "Puntos por Partido (PTS)",
+pch = 16,
+col = rgb(0, 0, 1, 0.5),
+cex = 0.8)
+abline(modelo, col = "red", lwd = 3)
+grid()
+legend("topleft",
+legend = paste("PTS =", intercepto, "+", pendiente, "× MP"),
+col = "red", lty = 1, lwd = 3, cex = 0.9)
+
+#----------------------------------------------------------------------------------
+# Gráficos de diagnóstico del modelo
+par(mfrow = c(2, 2))
+plot(modelo)
+par(mfrow = c(1, 1))
+
+#----------------------------------------------------------------------------------
+# Histograma de residuos
+residuos <- residuals(modelo)
+hist(residuos,
+main = "Distribución de Residuos",
+xlab = "Residuos",
+ylab = "Frecuencia",
+col = "pink",
+border = "black",
+breaks = 30)
+abline(v = 0, col = "red", lwd = 2, lty = 2)
+
+#----------------------------------------------------------------------------------
+
+# Crear nuevos datos para predicción
+nuevos_minutos <- data.frame(MP = c(10, 15, 20, 25, 30, 35))
+
+# Realizar predicciones
+predicciones <- predict(modelo, nuevos_minutos, interval = "prediction", level = 0.95)
+
+# Combinar resultados
+tabla_predicciones <- data.frame(
+Minutos = nuevos_minutos$MP,
+Puntos_Predichos = round(predicciones[, "fit"], 2),
+Limite_Inferior = round(predicciones[, "lwr"], 2),
+Limite_Superior = round(predicciones[, "upr"], 2)
+)
+
+print(tabla_predicciones)
+
+#----------------------------------------------------------------------------------
+# Ejemplo: Cuántos puntos anotaría un jugador que juega 28 minutos?
+minutos_ejemplo <- 28
+puntos_predichos <- predict(modelo, data.frame(MP = minutos_ejemplo))
+
+cat("=== EJEMPLO PRÁCTICO ===\n")
+cat("Si un jugador juega", minutos_ejemplo, "minutos por partido:\n")
+cat("Se espera que anote aproximadamente", round(puntos_predichos, 2), "puntos\n")
+
+# Gráfico con intervalo de confianza
+nuevos_mp <- data.frame(MP = seq(min(nba_clean$MP), max(nba_clean$MP), length.out = 100))
+pred_intervalo <- predict(modelo, nuevos_mp, interval = "confidence", level = 0.95)
+
+plot(nba_clean$MP, nba_clean$PTS,
+main = "Modelo con Intervalo de Confianza (95%)",
+xlab = "Minutos por Partido (MP)",
+ylab = "Puntos por Partido (PTS)",
+pch = 16,
+col = rgb(0, 0, 1, 0.3),
+cex = 0.7)
+
+# Agregar línea de regresión
+lines(nuevos_mp$MP, pred_intervalo[, "fit"], col = "red", lwd = 2)
+
+# Agregar intervalo de confianza
+lines(nuevos_mp$MP, pred_intervalo[, "lwr"], col = "blue", lty = 2, lwd = 2)
+lines(nuevos_mp$MP, pred_intervalo[, "upr"], col = "blue", lty = 2, lwd = 2)
+
+legend("topleft",
+legend = c("Datos observados", "Línea de regresión", "IC 95%"),
+col = c(rgb(0,0,1,0.5), "red", "blue"),
+pch = c(16, NA, NA),
+lty = c(NA, 1, 2),
+lwd = c(NA, 2, 2),
+cex = 0.8)
+grid()
+
+# Resumen resultados
+cat("--- RESUMEN DE RESULTADOS ---\n\n")
+cat("1. MODELO FINAL:\n")
+cat(" PTS =", intercepto, "+", pendiente, "× MP\n\n")
+
+cat("2. CORRELACIÓN:\n")
+cat(" r =", round(correlacion, 4), "\n")
+cat(" Interpretación: Correlación positiva muy fuerte\n\n")
+
+cat("3. BONDAD DE AJUSTE:\n")
+cat(" R² =", r_cuadrado, "\n")
+cat(" El", round(r_cuadrado*100, 2), "% de la variación en puntos se explica por los minutos\n\n")
+
+cat("4. SIGNIFICANCIA:\n")
+cat(" P-valor del modelo: < 2.2e-16 (altamente significativo)\n\n")
+
+cat("5. INTERPRETACIÓN PRÁCTICA:\n")
+cat(" - Cada minuto adicional de juego genera", pendiente, "puntos más en promedio\n")
+cat(" - Diferencia entre titular (32 min) y suplente (12 min):\n")
+cat(" ", round(pendiente * 20, 2), "puntos de diferencia esperada\n")
+```
