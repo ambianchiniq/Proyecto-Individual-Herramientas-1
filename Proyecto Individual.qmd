@@ -131,22 +131,6 @@ legend = paste("PTS =", intercepto, "+", pendiente, "× MP"),
 col = "red", lty = 1, lwd = 3, cex = 0.9)
 
 #----------------------------------------------------------------------------------
-# Gráficos de diagnóstico del modelo
-par(mfrow = c(2, 2))
-plot(modelo)
-par(mfrow = c(1, 1))
-
-#----------------------------------------------------------------------------------
-# Histograma de residuos
-residuos <- residuals(modelo)
-hist(residuos,
-main = "Distribución de Residuos",
-xlab = "Residuos",
-ylab = "Frecuencia",
-col = "pink",
-border = "black",
-breaks = 30)
-abline(v = 0, col = "red", lwd = 2, lty = 2)
 
 #----------------------------------------------------------------------------------
 
@@ -223,4 +207,4 @@ cat("5. INTERPRETACIÓN PRÁCTICA:\n")
 cat(" - Cada minuto adicional de juego genera", pendiente, "puntos más en promedio\n")
 cat(" - Diferencia entre titular (32 min) y suplente (12 min):\n")
 cat(" ", round(pendiente * 20, 2), "puntos de diferencia esperada\n")
-```
+'''
